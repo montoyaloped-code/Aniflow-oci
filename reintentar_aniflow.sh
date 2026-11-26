@@ -72,7 +72,7 @@ validar_entradas() {
 }
 
 lanzar_instancia() {
-  "$OCI_BIN" --region "$REGION" compute instance launch \
+  "$OCI_BIN" --config-file "$OCI_CONFIG" --region "$REGION" compute instance launch \
     --compartment-id "$COMPARTMENT_ID" \
     --availability-domain "$AD_NAME" \
     --display-name "$DISPLAY_NAME" \

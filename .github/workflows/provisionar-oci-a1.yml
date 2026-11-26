@@ -90,7 +90,7 @@ jobs:
           set -euo pipefail
           err="$RUNNER_TEMP/oci_check.err"
           set +e
-          existe=$("$OCI_BIN" --config "$OCI_CONFIG" --region "$REGION" compute instance list \
+          existe=$("$OCI_BIN" --config-file "$OCI_CONFIG" --region "$REGION" compute instance list \
             --compartment-id "$COMPARTMENT_ID" \
             --availability-domain "$AD_NAME" \
             --display-name "$DISPLAY_NAME" \
