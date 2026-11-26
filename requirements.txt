@@ -29,4 +29,4 @@ torchvision>=0.15
 transformers>=4.45
 einops
 timm
-easyocr>=1.7           # finds speech-bubble text for inpainting
+easyocr>=1.7.2           # finds speech-bubble text for inpainting
