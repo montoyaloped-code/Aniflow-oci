@@ -24,13 +24,10 @@ jobs:
       AD_NAME: loPQ:SA-BOGOTA-1-AD-1
       SUBNET_ID: ocid1.subnet.oc1.sa-bogota-1.aaaaaaaayd3qnmunzymcberuuksma7lgbsmpckbplr7o23hmkfr4boqnyhxa
       IMAGE_ID: ocid1.image.oc1.sa-bogota-1.aaaaaaaaobcfjlo46myspm5zc4wbhjrlund3nrhidszes5fszljykozobmmq
-      SSH_PUB_KEY_FILE: ${{ runner.temp }}/aniflow.pub
       DISPLAY_NAME: aniflow-a1
       RETRY_INTERVAL: '45'
       RATE_LIMIT_BACKOFF: '120'
       MAX_ATTEMPTS: '6'
-      OCI_CONFIG: ${{ runner.temp }}/.oci/config
-      OCI_BIN: ${{ runner.temp }}/oci-venv/bin/oci
       SUPPRESS_LABEL_WARNING: 'True'
     steps:
       - name: Checkout
@@ -42,6 +39,15 @@ jobs:
         uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: '3.14'
+
+      - name: Definir rutas del runner
+        run: |
+          set -euo pipefail
+          {
+            echo "OCI_CONFIG=$RUNNER_TEMP/.oci/config"
+            echo "OCI_BIN=$RUNNER_TEMP/oci-venv/bin/oci"
+            echo "SSH_PUB_KEY_FILE=$RUNNER_TEMP/aniflow.pub"
+          } >> "$GITHUB_ENV"
 
       - name: Instalar OCI CLI
         run: |
