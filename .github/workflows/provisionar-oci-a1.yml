@@ -53,7 +53,7 @@ jobs:
         run: |
           set -euo pipefail
           python3 -m venv "$RUNNER_TEMP/oci-venv"
-          "$OCI_BIN" -m pip install --quiet 'oci-cli==3.96.3'
+          "$RUNNER_TEMP/oci-venv/bin/python" -m pip install --quiet 'oci-cli==3.96.3'
           "$OCI_BIN" --version
 
       - name: Escribir credenciales OCI
