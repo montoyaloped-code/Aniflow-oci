@@ -26,7 +26,7 @@ torch>=2.0
 torchvision>=0.15
 
 # ─── Text extraction (Magi v2) + bubble removal ──────
-transformers>=4.45
+transformers>=5.24.0
 einops
 timm
 easyocr>=1.7           # finds speech-bubble text for inpainting
