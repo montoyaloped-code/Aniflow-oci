@@ -68,3 +68,5 @@ yt tutorial/
 # ─── Secrets ─────────────────────────────────────────
 .env
 SECURITY_AUDIT.txt
+oci_api_key_b64.local.txt
+oci_fingerprint.local.txt

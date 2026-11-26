@@ -67,17 +67,37 @@ jobs:
         run: |
           set -euo pipefail
           umask 077
+          user=$(printf '%s' "$OCI_USER_OCID" | tr -d '\n\r ')
+          tenancy=$(printf '%s' "$OCI_TENANCY_OCID" | tr -d '\n\r ')
+          fingerprint=$(printf '%s' "$OCI_FINGERPRINT" | tr -d '\n\r ' | tr 'A-Z' 'a-z')
+          if [[ -z "$user" || -z "$tenancy" || -z "$fingerprint" || -z "${OCI_API_KEY_B64//[[:space:]]/}" ]]; then
+            echo "::error::Faltan secrets OCI_USER_OCID, OCI_TENANCY_OCID, OCI_FINGERPRINT u OCI_API_KEY_B64" >&2
+            exit 1
+          fi
+          if [[ "$user" != ocid1.user.* || "$tenancy" != ocid1.tenancy.* ]]; then
+            echo "::error::OCI_USER_OCID u OCI_TENANCY_OCID no parecen OCID válidos" >&2
+            exit 1
+          fi
+          if [[ ! "$fingerprint" =~ ^([0-9a-f]{2}:){15}[0-9a-f]{2}$ ]]; then
+            echo "::error::OCI_FINGERPRINT no tiene formato de fingerprint MD5" >&2
+            exit 1
+          fi
           mkdir -p "$HOME/.oci"
           cat > "$OCI_CONFIG" <<EOF
           [DEFAULT]
-          user=${OCI_USER_OCID}
-          fingerprint=${OCI_FINGERPRINT}
+          user=${user}
+          fingerprint=${fingerprint}
           key_file=$HOME/.oci/oci_api_key.pem
-          tenancy=${OCI_TENANCY_OCID}
+          tenancy=${tenancy}
           region=${REGION}
           EOF
           printf '%s' "$OCI_API_KEY_B64" | tr -d '\n\r ' | base64 -d > "$HOME/.oci/oci_api_key.pem"
           chmod 600 "$OCI_CONFIG" "$HOME/.oci/oci_api_key.pem"
+          key_fingerprint=$(openssl pkey -in "$HOME/.oci/oci_api_key.pem" -pubout -outform DER 2>/dev/null | openssl md5 -c | sed 's/.*= //')
+          if [[ "$key_fingerprint" != "$fingerprint" ]]; then
+            echo "::error::El fingerprint del secret no coincide con OCI_API_KEY_B64" >&2
+            exit 1
+          fi
           printf '%s\n' "$SSH_PUBLIC_KEY" > "$SSH_PUB_KEY_FILE"
           chmod 600 "$SSH_PUB_KEY_FILE"
 
