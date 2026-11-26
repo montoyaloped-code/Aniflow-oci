@@ -1,0 +1,110 @@
+name: Aprovisionar OCI A1 en sa-bogota-1
+
+on:
+  schedule:
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: oci-a1-sa-bogota-1
+  cancel-in-progress: false
+
+jobs:
+  provisionar:
+    name: Reintentar creación de instancia
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    env:
+      REGION: sa-bogota-1
+      COMPARTMENT_ID: ocid1.tenancy.oc1..aaaaaaacrxoyxveqtss6sshjv5hyrwi6nuvwptkgvy2xuivfzpinpxg2bwa
+      AD_NAME: loPQ:SA-BOGOTA-1-AD-1
+      SUBNET_ID: ocid1.subnet.oc1.sa-bogota-1.aaaaaaaayd3qnmunzymcberuuksma7lgbsmpckbplr7o23hmkfr4boqnyhxa
+      IMAGE_ID: ocid1.image.oc1.sa-bogota-1.aaaaaaaazy5djfegqb5bqqkxvhvj3syvamkhxqexvzxsnkkdfxy26qyxa5pq
+      SSH_PUB_KEY_FILE: ${{ runner.temp }}/aniflow.pub
+      DISPLAY_NAME: aniflow-a1
+      RETRY_INTERVAL: '45'
+      RATE_LIMIT_BACKOFF: '120'
+      MAX_ATTEMPTS: '6'
+      OCI_CONFIG: ${{ runner.temp }}/.oci/config
+      OCI_BIN: ${{ runner.temp }}/oci-venv/bin/oci
+      SUPPRESS_LABEL_WARNING: 'True'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Configurar Python 3.14
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: '3.14'
+
+      - name: Instalar OCI CLI
+        run: |
+          set -euo pipefail
+          python3 -m venv "$RUNNER_TEMP/oci-venv"
+          "$OCI_BIN" -m pip install --quiet 'oci-cli==3.96.3'
+          "$OCI_BIN" --version
+
+      - name: Escribir credenciales OCI
+        env:
+          OCI_USER_OCID: ${{ secrets.OCI_USER_OCID }}
+          OCI_TENANCY_OCID: ${{ secrets.OCI_TENANCY_OCID }}
+          OCI_FINGERPRINT: ${{ secrets.OCI_FINGERPRINT }}
+          OCI_API_KEY_B64: ${{ secrets.OCI_API_KEY_B64 }}
+          SSH_PUBLIC_KEY: 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIH8XYzv2+10SMAsEiEXtidUvwG48o/B+i/Osskgla7YV Montoyaloped@gmail.com'
+        run: |
+          set -euo pipefail
+          umask 077
+          mkdir -p "$RUNNER_TEMP/.oci"
+          cat > "$OCI_CONFIG" <<EOF
+          [DEFAULT]
+          user=${OCI_USER_OCID}
+          fingerprint=${OCI_FINGERPRINT}
+          key_file=${RUNNER_TEMP}/.oci/oci_api_key.pem
+          tenancy=${OCI_TENANCY_OCID}
+          region=${REGION}
+          EOF
+          printf '%s' "$OCI_API_KEY_B64" | base64 -d > "$RUNNER_TEMP/.oci/oci_api_key.pem"
+          chmod 600 "$OCI_CONFIG" "$RUNNER_TEMP/.oci/oci_api_key.pem"
+          printf '%s\n' "$SSH_PUBLIC_KEY" > "$SSH_PUB_KEY_FILE"
+          chmod 600 "$SSH_PUB_KEY_FILE"
+
+      - name: Verificar sintaxis del script
+        run: bash -n reintentar_aniflow.sh
+
+      - name: Comprobar si ya existe la instancia
+        id: check
+        run: |
+          set -euo pipefail
+          existe=$("$OCI_BIN" --region "$REGION" compute instance list \
+            --compartment-id "$COMPARTMENT_ID" \
+            --availability-domain "$AD_NAME" \
+            --display-name "$DISPLAY_NAME" \
+            --query 'data[?"lifecycle-state" != `TERMINATED`] | [0].id' \
+            --raw-output 2>/dev/null || true)
+          if [[ -n "$existe" && "$existe" != "null" ]]; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            echo "Instancia ya existente: $existe"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Crear instancia
+        if: steps.check.outputs.exists == 'false'
+        run: bash reintentar_aniflow.sh
+
+      - name: Resumen
+        if: always()
+        env:
+          EXISTE: ${{ steps.check.outputs.exists }}
+        run: |
+          if [[ "$EXISTE" == "true" ]]; then
+            echo "### OCI A1: la instancia ya existe" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "### OCI A1: intento de creación ejecutado" >> "$GITHUB_STEP_SUMMARY"
+          fi
