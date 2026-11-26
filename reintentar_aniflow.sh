@@ -2,10 +2,10 @@
 set -euo pipefail
 
 # Rellena solo estos cinco valores con datos de tu consola OCI (se pueden override por entorno):
-COMPARTMENT_ID="${COMPARTMENT_ID:-ocid1.tenancy.oc1..aaaaaaacrxoyxveqtss6sshjv5hyrwi6nuvwptkgvy2xuivfzpinpxg2bwa}" # OCID del compartment raíz (tenancy)
+COMPARTMENT_ID="${COMPARTMENT_ID:-ocid1.tenancy.oc1..aaaaaaaacrxoyxveqtss6sshjv5hyrwi6nuvwptkgvy2xuivfzpinpxg2bwa}" # OCID del compartment raíz (tenancy)
 AD_NAME="${AD_NAME:-loPQ:SA-BOGOTA-1-AD-1}" # Availability Domain de sa-bogota-1
 SUBNET_ID="${SUBNET_ID:-ocid1.subnet.oc1.sa-bogota-1.aaaaaaaayd3qnmunzymcberuuksma7lgbsmpckbplr7o23hmkfr4boqnyhxa}" # OCID de la subnet pública
-IMAGE_ID="${IMAGE_ID:-ocid1.image.oc1.sa-bogota-1.aaaaaaaazy5djfegqb5bqqkxvhvj3syvamkhxqexvzxsnkkdfxy26qyxa5pq}" # Ubuntu 24.04 aarch64 (Canonical-Ubuntu-24.04-aarch64-2026.07.17-0)
+IMAGE_ID="${IMAGE_ID:-ocid1.image.oc1.sa-bogota-1.aaaaaaaaobcfjlo46myspm5zc4wbhjrlund3nrhidszes5fszljykozobmmq}" # Ubuntu 24.04 aarch64 (Canonical-Ubuntu-24.04-aarch64-2026.11.05-0)
 SSH_PUB_KEY_FILE="${SSH_PUB_KEY_FILE:-$HOME/.ssh/id_ed25519.pub}" # Clave pública SSH (nunca la privada)
 
 REGION="sa-bogota-1"

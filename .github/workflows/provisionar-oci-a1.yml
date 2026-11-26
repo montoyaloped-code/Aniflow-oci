@@ -20,10 +20,10 @@ jobs:
       contents: read
     env:
       REGION: sa-bogota-1
-      COMPARTMENT_ID: ocid1.tenancy.oc1..aaaaaaacrxoyxveqtss6sshjv5hyrwi6nuvwptkgvy2xuivfzpinpxg2bwa
+      COMPARTMENT_ID: ocid1.tenancy.oc1..aaaaaaaacrxoyxveqtss6sshjv5hyrwi6nuvwptkgvy2xuivfzpinpxg2bwa
       AD_NAME: loPQ:SA-BOGOTA-1-AD-1
       SUBNET_ID: ocid1.subnet.oc1.sa-bogota-1.aaaaaaaayd3qnmunzymcberuuksma7lgbsmpckbplr7o23hmkfr4boqnyhxa
-      IMAGE_ID: ocid1.image.oc1.sa-bogota-1.aaaaaaaazy5djfegqb5bqqkxvhvj3syvamkhxqexvzxsnkkdfxy26qyxa5pq
+      IMAGE_ID: ocid1.image.oc1.sa-bogota-1.aaaaaaaaobcfjlo46myspm5zc4wbhjrlund3nrhidszes5fszljykozobmmq
       SSH_PUB_KEY_FILE: ${{ runner.temp }}/aniflow.pub
       DISPLAY_NAME: aniflow-a1
       RETRY_INTERVAL: '45'
