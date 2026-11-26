@@ -44,7 +44,8 @@ jobs:
         run: |
           set -euo pipefail
           {
-            echo "OCI_CONFIG=$RUNNER_TEMP/.oci/config"
+            echo "OCI_CONFIG=$HOME/.oci/config"
+            echo "OCI_CLI_CONFIG_FILE=$HOME/.oci/config"
             echo "OCI_BIN=$RUNNER_TEMP/oci-venv/bin/oci"
             echo "SSH_PUB_KEY_FILE=$RUNNER_TEMP/aniflow.pub"
           } >> "$GITHUB_ENV"
@@ -66,17 +67,17 @@ jobs:
         run: |
           set -euo pipefail
           umask 077
-          mkdir -p "$RUNNER_TEMP/.oci"
+          mkdir -p "$HOME/.oci"
           cat > "$OCI_CONFIG" <<EOF
           [DEFAULT]
           user=${OCI_USER_OCID}
           fingerprint=${OCI_FINGERPRINT}
-          key_file=${RUNNER_TEMP}/.oci/oci_api_key.pem
+          key_file=$HOME/.oci/oci_api_key.pem
           tenancy=${OCI_TENANCY_OCID}
           region=${REGION}
           EOF
-          printf '%s' "$OCI_API_KEY_B64" | tr -d '\n\r ' | base64 -d > "$RUNNER_TEMP/.oci/oci_api_key.pem"
-          chmod 600 "$OCI_CONFIG" "$RUNNER_TEMP/.oci/oci_api_key.pem"
+          printf '%s' "$OCI_API_KEY_B64" | tr -d '\n\r ' | base64 -d > "$HOME/.oci/oci_api_key.pem"
+          chmod 600 "$OCI_CONFIG" "$HOME/.oci/oci_api_key.pem"
           printf '%s\n' "$SSH_PUBLIC_KEY" > "$SSH_PUB_KEY_FILE"
           chmod 600 "$SSH_PUB_KEY_FILE"
 
@@ -87,12 +88,21 @@ jobs:
         id: check
         run: |
           set -euo pipefail
-          existe=$("$OCI_BIN" --region "$REGION" compute instance list \
+          err="$RUNNER_TEMP/oci_check.err"
+          set +e
+          existe=$("$OCI_BIN" --config "$OCI_CONFIG" --region "$REGION" compute instance list \
             --compartment-id "$COMPARTMENT_ID" \
             --availability-domain "$AD_NAME" \
             --display-name "$DISPLAY_NAME" \
             --query 'data[?"lifecycle-state" != `TERMINATED`] | [0].id' \
-            --raw-output 2>/dev/null || true)
+            --raw-output 2>"$err")
+          codigo=$?
+          set -e
+          if (( codigo != 0 )); then
+            echo "::error::OCI CLI falló al comprobar la instancia (exit $codigo)"
+            cat "$err" >&2
+            exit "$codigo"
+          fi
           if [[ -n "$existe" && "$existe" != "null" ]]; then
             echo "exists=true" >> "$GITHUB_OUTPUT"
             echo "Instancia ya existente: $existe"
@@ -111,6 +121,8 @@ jobs:
         run: |
           if [[ "$EXISTE" == "true" ]]; then
             echo "### OCI A1: la instancia ya existe" >> "$GITHUB_STEP_SUMMARY"
-          else
+          elif [[ "$EXISTE" == "false" ]]; then
             echo "### OCI A1: intento de creación ejecutado" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "### OCI A1: verificación no completada" >> "$GITHUB_STEP_SUMMARY"
           fi

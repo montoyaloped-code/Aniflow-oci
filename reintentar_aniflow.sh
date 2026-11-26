@@ -21,6 +21,7 @@ DRY_RUN="${DRY_RUN:-0}"
 
 OCI_BIN="${OCI_BIN:-$HOME/oci-venv/bin/oci}"
 OCI_CONFIG="${OCI_CONFIG:-$HOME/.oci/config}"
+export OCI_CLI_CONFIG_FILE="$OCI_CONFIG"
 
 log() {
   printf '%s %s\n' "$(date '+%F %T %Z')" "$*"
@@ -34,7 +35,7 @@ die() {
 preflight() {
   local missing=()
   [[ -x "$OCI_BIN" ]] || missing+=("$HOME/oci-venv/bin/oci (ejecutable)")
-  [[ -r "$OCI_CONFIG" ]] || missing+=("$HOME/.oci/config (legible)")
+  [[ -r "$OCI_CONFIG" ]] || missing+=("$OCI_CONFIG (legible)")
   if (( ${#missing[@]} > 0 )); then
     if (( DRY_RUN )); then
       log "AVISO (DRY_RUN) falta(n): ${missing[*]}"
