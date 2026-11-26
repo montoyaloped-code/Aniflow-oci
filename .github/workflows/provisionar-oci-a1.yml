@@ -2,7 +2,7 @@ name: Aprovisionar OCI A1 en sa-bogota-1
 
 on:
   schedule:
-    - cron: '*/5 * * * *'
+    - cron: '*/30 * * * *'
   workflow_dispatch:
 
 permissions: {}
@@ -15,7 +15,7 @@ jobs:
   provisionar:
     name: Reintentar creación de instancia
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 25
     permissions:
       contents: read
     env:
@@ -27,7 +27,8 @@ jobs:
       DISPLAY_NAME: aniflow-a1
       RETRY_INTERVAL: '45'
       RATE_LIMIT_BACKOFF: '120'
-      MAX_ATTEMPTS: '6'
+      MAX_ATTEMPTS: '0'
+      MAX_RUNTIME_SECONDS: '1200'
       SUPPRESS_LABEL_WARNING: 'True'
     steps:
       - name: Checkout
