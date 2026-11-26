@@ -75,7 +75,7 @@ jobs:
           tenancy=${OCI_TENANCY_OCID}
           region=${REGION}
           EOF
-          printf '%s' "$OCI_API_KEY_B64" | base64 -d > "$RUNNER_TEMP/.oci/oci_api_key.pem"
+          printf '%s' "$OCI_API_KEY_B64" | tr -d '\n\r ' | base64 -d > "$RUNNER_TEMP/.oci/oci_api_key.pem"
           chmod 600 "$OCI_CONFIG" "$RUNNER_TEMP/.oci/oci_api_key.pem"
           printf '%s\n' "$SSH_PUBLIC_KEY" > "$SSH_PUB_KEY_FILE"
           chmod 600 "$SSH_PUB_KEY_FILE"
