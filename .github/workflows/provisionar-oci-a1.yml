@@ -15,8 +15,9 @@ jobs:
   provisionar:
     name: Reintentar creación de instancia
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 35
     permissions:
+      actions: write
       contents: read
     env:
       REGION: sa-bogota-1
@@ -28,7 +29,7 @@ jobs:
       RETRY_INTERVAL: '45'
       RATE_LIMIT_BACKOFF: '120'
       MAX_ATTEMPTS: '0'
-      MAX_RUNTIME_SECONDS: '1200'
+      MAX_RUNTIME_SECONDS: '1500'
       SUPPRESS_LABEL_WARNING: 'True'
     steps:
       - name: Checkout
@@ -156,3 +157,35 @@ jobs:
           else
             echo "### OCI A1: verificación no completada" >> "$GITHUB_STEP_SUMMARY"
           fi
+
+      - name: Encadenar siguiente ejecución si no existe
+        if: always()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [[ ! -r "$OCI_CONFIG" || ! -x "$OCI_BIN" ]]; then
+            echo "No se pudo comprobar OCI; se omite el reencadenamiento."
+            exit 0
+          fi
+          err="$RUNNER_TEMP/oci_chain_check.err"
+          set +e
+          existe=$("$OCI_BIN" --config-file "$OCI_CONFIG" --region "$REGION" compute instance list \
+            --compartment-id "$COMPARTMENT_ID" \
+            --availability-domain "$AD_NAME" \
+            --display-name "$DISPLAY_NAME" \
+            --query 'data[?"lifecycle-state" != `TERMINATED`] | [0].id' \
+            --raw-output 2>"$err")
+          codigo=$?
+          set -e
+          if (( codigo != 0 )); then
+            echo "OCI CLI falló al recomp...; se omite el reencadenamiento."
+            cat "$err" >&2
+            exit 0
+          fi
+          if [[ -n "$existe" && "$existe" != "null" ]]; then
+            echo "Instancia $DISPLAY_NAME ya existe; no se encadena otra ejecución."
+            exit 0
+          fi
+          gh workflow run provisionar-oci-a1.yml --ref main
+          echo "Siguiente ejecución encadenada."
